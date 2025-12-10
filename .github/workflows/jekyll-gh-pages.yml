@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Jogo de Adivinhar Filmes</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background-color: #f0f0f0; }
+        .palavra { font-size: 2em; letter-spacing: 0.2em; margin-bottom: 20px; }
+        .mensagem { margin: 20px 0; font-weight: bold; }
+        .letras-erradas { color: red; margin-bottom: 10px; }
+        button { font-size: 1em; padding: 5px 10px; margin-top: 10px; cursor: pointer; }
+        input[type="text"] { width: 30px; font-size: 1em; text-align: center; }
+    </style>
+</head>
+<body>
+    <h1>🎬 Adivinhe o Filme!</h1>
+
+    <div class="palavra" id="palavraDisplay"></div>
+    <div class="mensagem" id="mensagem"></div>
+    <div class="letras-erradas" id="letrasErradas"></div>
+    <div>Tentativas restantes: <span id="tentativas">6</span></div>
+
+    <input type="text" id="letraInput" maxlength="1" autofocus>
+    <button onclick="chutarLetra()">Chutar</button>
+    <br>
+    <button onclick="reiniciarJogo()">Reiniciar Jogo</button>
+
+    <script>
+        const filmes = [
+            "TITANIC",
+            "MATRIX",
+            "AVATAR",
+            "GLADIADOR",
+            "INTERESTELAR",
+            "O PODEROSO CHEFAO",
+            "HARRY POTTER",
+            "SENHOR DOS ANEIS",
+            "JURASSIC PARK",
+            "DE VOLTA PARA O FUTURO"
+        ];
+
+        let palavra = "";
+        let letrasCertas = [];
+        let letrasErradas = [];
+        let tentativas = 6;
+
+        function escolherFilme() {
+            palavra = filmes[Math.floor(Math.random() * filmes.length)];
+        }
+
+        function mostrarPalavra() {
+            let exibicao = "";
+            for (let letra of palavra) {
+                if (letra === " ") {
+                    exibicao += "  ";
+                } else if (letrasCertas.includes(letra)) {
+                    exibicao += letra + " ";
+                } else {
+                    exibicao += "_ ";
+                }
+            }
+            document.getElementById("palavraDisplay").innerText = exibicao;
+        }
+
+        function chutarLetra() {
+            const input = document.getElementById("letraInput");
+            const letra = input.value.toUpperCase();
+            input.value = "";
+            document.getElementById("mensagem").innerText = "";
+
+            if (!letra.match(/[A-Z]/) || letra.length !== 1) {
+                document.getElementById("mensagem").innerText = "Digite apenas uma letra válida!";
+                return;
+            }
+
+            if (letrasCertas.includes(letra) || letrasErradas.includes(letra)) {
+                document.getElementById("mensagem").innerText = "Você já tentou essa letra!";
+                return;
+            }
+
+            if (palavra.includes(letra)) {
+                letrasCertas.push(letra);
+                document.getElementById("mensagem").innerText = "✔ Boa! A letra está na palavra.";
+            } else {
+                letrasErradas.push(letra);
+                tentativas--;
+                document.getElementById("mensagem").innerText = "✖ Letra errada!";
+            }
+
+            document.getElementById("tentativas").innerText = tentativas;
+            document.getElementById("letrasErradas").innerText = "Erros: " + letrasErradas.join(", ");
+
+            mostrarPalavra();
+            verificarFim();
+        }
+
+        function verificarFim() {
+            if (palavra.split("").every(l => letrasCertas.includes(l) || l === " ")) {
+                document.getElementById("mensagem").innerText = `🎉 PARABÉNS! Você acertou o filme: ${palavra}`;
+            } else if (tentativas === 0) {
+                document.getElementById("mensagem").innerText = `💀 Fim de jogo! O filme era: ${palavra}`;
+            }
+        }
+
+        function reiniciarJogo() {
+            letrasCertas = [];
+            letrasErradas = [];
+            tentativas = 6;
+            escolherFilme();
+            mostrarPalavra();
+            document.getElementById("mensagem").innerText = "";
+            document.getElementById("tentativas").innerText = tentativas;
+            document.getElementById("letrasErradas").innerText = "";
+        }
+
+        // Inicia o jogo
+        reiniciarJogo();
+    </script>
+</body>
+</html>
+# Sample workflow for building and deploying a Jekyll site to GitHub Pages
+name: Deploy Jekyll with GitHub Pages dependencies preinstalled
+
+on:
+  # Runs on pushes targeting the default branch
+  push:
+    branches: ["main"]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  # Build job
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+      - name: Build with Jekyll
+        uses: actions/jekyll-build-pages@v1
+        with:
+          source: ./
+          destination: ./_site
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
